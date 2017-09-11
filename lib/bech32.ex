@@ -70,7 +70,7 @@ defmodule Bech32 do
       {:ok, {"bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13, 8, 21,
         4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22]}}
   """
-  @spec decode(String.t) :: {:ok, {String.t, list}} | {:error, String.t}
+  @spec decode(String.t) :: {:ok, {String.t, list(integer)}} | {:error, String.t}
   def decode(bech) do
     if (String.downcase(bech) != bech && String.upcase(bech) != bech) do
       {:error, "Bech string uses mixed case."}

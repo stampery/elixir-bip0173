@@ -35,7 +35,7 @@ defmodule SegwitAddr do
   """
   @spec encode(String.t, integer, list(integer)) :: String.t
   def encode(hrp, version, program) when is_list(program) do
-    Bech32.encode(hrp, [version] ++ program)
+    Bech32.encode(hrp, [version] ++ convert_bits(program, 8, 5))
   end
 
   @spec encode(String.t, String.t) :: String.t
@@ -43,7 +43,6 @@ defmodule SegwitAddr do
     <<version, _size, program::binary>> = Base.decode16!(program, case: :mixed)
     program
       |> :binary.bin_to_list
-      |> convert_bits(8, 5)
       |> (&(encode(hrp, version, &1))).()
   end
 
@@ -53,13 +52,8 @@ defmodule SegwitAddr do
   ## Examples
 
       iex> SegwitAddr.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
-      {:ok, {"bc", 0, [0, 20, 117, 30, 118, 232, 25, 145, 150, 212,
-        84, 148, 28, 69, 209, 179, 163, 35, 241, 67, 59, 214]}}
-
-      iex> {:ok, {_hrp, _version, program}} =
-      ...> SegwitAddr.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4");
-      ...> Base.encode16(:binary.list_to_bin(program), case: :lower)
-      "0014751e76e8199196d454941c45d1b3a323f1433bd6"
+      {:ok, {"bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,
+      84, 148, 28, 69, 209, 179, 163, 35, 241, 67, 59, 214]}}
   """
   @spec decode(String.t)
   :: {:ok, {pos_integer, list(integer)}} | {:error,  String.t}
@@ -67,11 +61,29 @@ defmodule SegwitAddr do
     case Bech32.decode(addr) do
       {:ok, {hrp, data}} ->
         [version | encoded] = data
-        decoded = convert_bits(encoded, 5, 8, false)
-        program = [version, Enum.count(decoded) | decoded]
+        program = convert_bits(encoded, 5, 8, false)
         {:ok, {hrp, version, program}}
       error -> error
     end
+  end
+
+  @doc ~S"""
+  Encode a witness program into a hexadecimal ScriptPubKey.
+
+  ## Examples
+
+      iex> SegwitAddr.to_script_pub_key(0, [117, 30, 118, 232, 25, 145, 150,
+      ...> 212, 84, 148, 28, 69, 209, 179, 163, 35, 241, 67, 59, 214])
+      "0014751e76e8199196d454941c45d1b3a323f1433bd6"
+  """
+  @spec to_script_pub_key(pos_integer, list(integer)) :: String.t
+  def to_script_pub_key(version, program) do
+    [
+      if version == 0 do 0 else version + 0x50 end,
+      Enum.count(program) | program
+    ]
+      |> :binary.list_to_bin()
+      |> Base.encode16(case: :lower)
   end
 
   # General power-of-2 base conversion.

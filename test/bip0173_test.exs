@@ -11,6 +11,17 @@ defmodule BIP0173Test do
     "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w",
   ]
 
+  @invalid_checksum [
+    <<0x20, "1nwldj5">>,
+    <<0x7f, "1axkwrx">>,
+    "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx",
+    "pzry9x0s0muk",
+    "1pzry9x0s0muk",
+    "x1b4n0q5v",
+    "li1dgmt3",
+    <<"de1lg7wt", 0xff>>,
+  ]
+
   @valid_address [
     ["BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4", "0014751e76e8199196d454941c45d1b3a323f1433bd6"],
     ["tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7",
@@ -31,14 +42,21 @@ defmodule BIP0173Test do
     "bc10w508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kw5rljs90",
     "BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P",
     "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sL5k7",
-    "tb1pw508d6qejxtdg4y5r3zarqfsj6c3",
+    "bc1zw508d6qejxtdg4y5r3zarvaryvqyzf3du",
     "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv",
+    "bc1gmk9yu"
   ]
 
-  test "verify_checksum" do
+  test "valid_checksum" do
     for bech <- @valid_checksum do
       assert {:ok, {hrp, _program}} = Bech32.decode(bech)
       assert hrp != nil
+    end
+  end
+
+  test "invalid_checksum" do
+    for bech <- @invalid_checksum do
+      assert {:error, _msg} = Bech32.decode(bech)
     end
   end
 

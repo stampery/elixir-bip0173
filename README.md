@@ -1,4 +1,4 @@
-# BIP-0173
+# BIP-0173 [![Build Status](https://travis-ci.org/stampery/elixir-bip0173.svg?branch=master)](https://travis-ci.org/stampery/elixir-bip0173)
 
 **Elixir implementation of Bitcoin's address format for native SegWit outputs.**
 

@@ -32,6 +32,10 @@ defmodule SegwitAddr do
 
       iex> SegwitAddr.encode("bc", "0014751e76e8199196d454941c45d1b3a323f1433bd6")
       "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+
+      iex> SegwitAddr.encode("bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,
+      ...> 84, 148, 28, 69, 209, 179, 163, 35, 241, 67, 59, 214])
+      "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
   """
   @spec encode(String.t, integer, list(integer)) :: String.t
   def encode(hrp, version, program) when is_list(program) do

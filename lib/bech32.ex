@@ -55,7 +55,7 @@ defmodule Bech32 do
 
   @spec encode(String.t, String.t) :: String.t
   def encode(hrp, data) when is_binary(data) do
-    encode(hrp, String.to_charlist(data))
+    encode(hrp, :binary.bin_to_list(data))
   end
 
   @doc ~S"""
@@ -72,35 +72,48 @@ defmodule Bech32 do
   """
   @spec decode(String.t) :: {:ok, {String.t, list(integer)}} | {:error, String.t}
   def decode(bech) do
-    if (String.downcase(bech) != bech && String.upcase(bech) != bech) do
-      {:error, "Bech string uses mixed case."}
-    else
-      bech_charlist = String.to_charlist(bech)
-      if (Enum.find(bech_charlist, fn (c) -> c < 33 || c > 126 end)) do
-        {:error, "Bech string contains illegal characters."}
-      else
-        bech = String.downcase(bech)
-        len = Enum.count(bech_charlist)
-        pos = len - 1 - Enum.find_index(Enum.reverse(bech_charlist), fn (c) ->
-          c == @separator
-        end)
-        if (pos < 1 || pos + 7  > len || len > 90) do
-          {:error, "Bech string is not properly formatted."}
-        else
-          <<hrp::binary-size(pos), @separator, data::binary>> = bech
-          data_charlist = for c <- String.to_charlist(data) do
+    with  {_, false}  <- {:mixed,  String.downcase(bech) != bech &&
+            String.upcase(bech) != bech},
+          bech_charlist = :binary.bin_to_list(bech),
+          {_, nil} <- {:oor, Enum.find(
+            bech_charlist,
+            fn (c) -> c < 33 || c > 126 end
+          )},
+          bech = String.downcase(bech),
+          len = Enum.count(bech_charlist),
+          pos = Enum.find_index(Enum.reverse(bech_charlist), fn (c) ->
+            c == @separator
+          end),
+          {_, true} <- {:oor_sep, pos != nil},
+          pos = len - pos - 1,
+          {_, false} <- {:empty_hrp, pos < 1},
+          {_, false, _} <- {:short_cs, pos + 7 > len, len},
+          {_, false, _} <- {:too_long, len > 90, len},
+          <<hrp::binary-size(pos), @separator, data::binary>> = bech,
+          data_charlist = (for c <- :binary.bin_to_list(data) do
             Enum.find_index(@charset, fn (d) -> c == d end)
-          end
-          if (verify_checksum(hrp, data_charlist)) do
-            data_len = Enum.count(data_charlist)
-            {:ok, {hrp, Enum.slice(data_charlist, 0, data_len - 6)}}
+          end),
+          {_, nil} <- {:oor_data, Enum.find_index(
+            data_charlist,
+            fn (c) -> c < 0 || c > 31 end
+          )},
+          {_, true} <- {:cs, verify_checksum(hrp, data_charlist)},
+          data_len = Enum.count(data_charlist),
+          data = Enum.slice(data_charlist, 0, data_len - 6)
+          do
+            {:ok, {hrp, data}}
           else
-            {:error, "Wrong checksum."}
+            {:mixed, _} -> {:error, "Mixed case"}
+            {:oor, c} -> {:error, "Character #{inspect(<<c>>)} out of range (#{c})"}
+            {:oor_sep, _} -> {:error, "No separator character"}
+            {:empty_hrp, _} -> {:error, "Empty HRP"}
+            {:short_cs, _, l} -> {:error, "Too short checksum (#{l})"}
+            {:too_long, _, l} -> {:error, "Overall max length exceeded (#{l})"}
+            {:oor_data, c} -> {:error, "Invalid data character #{inspect(<<c>>)} (#{c})}"}
+            {:cs, _} -> {:error, "Invalid checksum"}
+            _ -> {:error, "Unknown error"}
           end
-        end
-      end
     end
-  end
 
   # Create a checksum.
   defp create_checksum(hrp, data) do
@@ -116,7 +129,7 @@ defmodule Bech32 do
 
   # Expand a HRP for use in checksum computation.
   defp expand_hrp(hrp) do
-    hrp_charlist = String.to_charlist(hrp)
+    hrp_charlist = :binary.bin_to_list(hrp)
     a_values = for c <- hrp_charlist, do: c >>> 5
     b_values = for c <- hrp_charlist, do: c &&& 31
     a_values ++ [0] ++ b_values

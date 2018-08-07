@@ -60,7 +60,7 @@ defmodule SegwitAddr do
       84, 148, 28, 69, 209, 179, 163, 35, 241, 67, 59, 214]}}
   """
   @spec decode(String.t)
-  :: {:ok, {pos_integer, list(integer)}} | {:error,  String.t}
+  :: {:ok, {String.t, integer, list(integer)}} | {:error,  String.t}
   def decode(addr) do
     case Bech32.decode(addr) do
       {:ok, {hrp, data}} ->

@@ -64,9 +64,20 @@ defmodule SegwitAddr do
   def decode(addr) do
     case Bech32.decode(addr) do
       {:ok, {hrp, data}} ->
-        [version | encoded] = data
-        program = convert_bits(encoded, 5, 8, false)
-        {:ok, {hrp, version, program}}
+        case data do
+          [version | encoded] when version in 0..16 ->
+            program = convert_bits(encoded, 5, 8, false)
+            cond do
+              is_nil(program) or !program_length_valid?(version, length(program)) ->
+                {:error, "Invalid program length for witness version"}
+              true ->
+                {:ok, {hrp, version, program}}
+            end
+          [_ | _] ->
+            {:error, "Invalid witness version"}
+          [] ->
+            {:error, "Empty data section"}
+        end
       error -> error
     end
   end
@@ -129,4 +140,7 @@ defmodule SegwitAddr do
     end
   end
 
+  defp program_length_valid?(0, length) when length in [20, 32], do: true
+  defp program_length_valid?(version, length) when version != 0 and length in 2..40, do: true
+  defp program_length_valid?(_, _), do: false
 end

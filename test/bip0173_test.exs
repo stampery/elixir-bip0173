@@ -5,21 +5,27 @@ defmodule BIP0173Test do
 
   @valid_checksum [
     "A12UEL5L",
+    "a12uel5l",
     "an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs",
     "abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw",
     "11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j",
     "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w",
+    "?1ezyfcl"
   ]
 
   @invalid_checksum [
     <<0x20, "1nwldj5">>,
     <<0x7f, "1axkwrx">>,
+    <<0x80, "1eym55h">>,
     "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx",
     "pzry9x0s0muk",
     "1pzry9x0s0muk",
     "x1b4n0q5v",
     "li1dgmt3",
     <<"de1lg7wt", 0xff>>,
+    "A1G7SGD8",
+    "10a06t8",
+    "1qzzfhee"
   ]
 
   @valid_address [
@@ -34,8 +40,10 @@ defmodule BIP0173Test do
     "0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433"],
   ]
 
+  # BIP0173 spec also includes
+  # tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty
+  # but we do not validate the human readable part
   @invalid_address [
-    "tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty",
     "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5",
     "BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2",
     "bc1rw5uspcuh",
@@ -70,7 +78,7 @@ defmodule BIP0173Test do
   end
 
   test "invalid address" do
-    for [addr, _hex] <- @invalid_address do
+    for addr <- @invalid_address do
       assert {:error, _} = SegwitAddr.decode(addr)
     end
   end

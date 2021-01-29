@@ -22,7 +22,7 @@ defmodule Bech32 do
   use Bitwise
 
   @moduledoc ~S"""
-  Encode and decode the Bech32 format, with checksums.
+  Encode and decode the Bech32 and Bech32m format, with checksums.
   """
 
   # Encoding character set. Maps data value -> char
@@ -34,25 +34,38 @@ defmodule Bech32 do
   # Generator coefficients
   @generator [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
 
+  @bech32m_const 0x2bc830a3
+
   @typedoc """
   Base32 code point
   """
   @type code_point_t :: 0..31
 
+  @typedoc """
+  Encoding type
+
+  :bech32 defined in BIP0173
+  :bech32m defined in BIP0350
+  """
+  @type encoding_t :: :bech32 | :bech32m
+
   @doc ~S"""
-  Encode a Bech32 string.
+  Encode a Bech32/Bech32m string.
 
   ## Examples
 
-      iex> Bech32.encode("bech32", [0, 1, 2])
+      iex> Bech32.encode("bech32", [0, 1, 2], :bech32)
       "bech321qpz4nc4pe"
 
+      iex> Bech32.encode("bech32", [0, 1, 2], :bech32m)
+      "bech321qpzq0geym"
+
       iex> Bech32.encode("bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13,
-      ...> 8, 21, 4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24,20, 6, 14, 30, 22])
+      ...> 8, 21, 4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22], :bech32)
       "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
   """
-  @spec encode(String.t, list(code_point_t)) :: String.t
-  def encode(hrp, data) when is_list(data) do
+  @spec encode(String.t, list(code_point_t), encoding_t()) :: String.t
+  def encode(hrp, data, encoding) when is_list(data) do
     unless byte_size(hrp) in 1..83 do
       raise ArgumentError, message: "invalid hrp length"
     end
@@ -61,29 +74,32 @@ defmodule Bech32 do
       raise ArgumentError, message: "illegal character in hrp"
     end
 
-    checksummed = data ++ create_checksum(hrp, data)
+    checksummed = data ++ create_checksum(hrp, data, encoding)
     dp = for (i <- checksummed), into: "", do: <<Enum.at(@charset, i)>>
     <<hrp::binary, @separator, dp::binary>>
   end
 
-  @spec encode(String.t, String.t) :: String.t
-  def encode(hrp, data) when is_binary(data) do
-    encode(hrp, :binary.bin_to_list(data))
+  @spec encode(String.t, String.t, encoding_t()) :: String.t
+  def encode(hrp, data, encoding) when is_binary(data) do
+    encode(hrp, :binary.bin_to_list(data), encoding)
   end
 
   @doc ~S"""
-  Decode a Bech32 string.
+  Decode a Bech32/Bech32m string.
 
   ## Examples
 
       iex> Bech32.decode("bech321qpz4nc4pe")
-      {:ok, {"bech32", [0, 1, 2]}}
+      {:ok, {"bech32", [0, 1, 2], :bech32}}
+
+      iex> Bech32.decode("bech321qpzq0geym")
+      {:ok, {"bech32", [0, 1, 2], :bech32m}}
 
       iex> Bech32.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
       {:ok, {"bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13, 8, 21,
-        4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22]}}
+        4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22], :bech32}}
   """
-  @spec decode(String.t) :: {:ok, {String.t, list(code_point_t)}} | {:error, String.t}
+  @spec decode(String.t) :: {:ok, {String.t, list(code_point_t), encoding_t()}} | {:error, String.t}
   def decode(bech) do
     with  {_, false}  <- {:mixed,  String.downcase(bech) != bech &&
             String.upcase(bech) != bech},
@@ -110,11 +126,11 @@ defmodule Bech32 do
             data_charlist,
             fn (c) -> c < 0 || c > 31 end
           )},
-          {_, true} <- {:cs, verify_checksum(hrp, data_charlist)},
+          {_, {:ok, encoding}} <- {:cs, verify_checksum(hrp, data_charlist)},
           data_len = Enum.count(data_charlist),
           data = Enum.slice(data_charlist, 0, data_len - 6)
           do
-            {:ok, {hrp, data}}
+            {:ok, {hrp, data, encoding}}
           else
             {:mixed, _} -> {:error, "Mixed case"}
             {:oor, c} -> {:error, "Character #{inspect(<<c>>)} out of range (#{c})"}
@@ -129,16 +145,23 @@ defmodule Bech32 do
     end
 
   # Create a checksum.
-  defp create_checksum(hrp, data) do
+  defp create_checksum(hrp, data, encoding) do
     values = expand_hrp(hrp) ++ data ++ [0, 0, 0, 0, 0, 0]
-    mod = polymod(values) ^^^ 1
+    mod = polymod(values) ^^^ get_encoding_const(encoding)
     for p <- 0..5, do: (mod >>> 5 * (5 - p)) &&& 31
   end
 
   # Verify a checksum.
   defp verify_checksum(hrp, data) do
-    polymod(expand_hrp(hrp) ++ data) == 1
+    case polymod(expand_hrp(hrp) ++ data) do
+      1 -> {:ok, :bech32}
+      @bech32m_const -> {:ok, :bech32m}
+      _ -> :error
+    end
   end
+
+  defp get_encoding_const(:bech32), do: 1
+  defp get_encoding_const(:bech32m), do: @bech32m_const
 
   # Expand a HRP for use in checksum computation.
   defp expand_hrp(hrp) do

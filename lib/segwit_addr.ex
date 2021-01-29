@@ -22,7 +22,7 @@ defmodule SegwitAddr do
   use Bitwise
 
   @moduledoc ~S"""
-  Encode and decode BIP-0173 compliant SegWit addresses.
+  Encode and decode BIP-0173 and BIP-0350 compliant SegWit addresses.
   """
 
   @typedoc """
@@ -52,7 +52,8 @@ defmodule SegwitAddr do
       raise ArgumentError, "invalid witness program length"
     end
 
-    Bech32.encode(hrp, [version] ++ convert_bits(program, 8, 5))
+    encoding = get_encoding(version)
+    Bech32.encode(hrp, [version] ++ convert_bits(program, 8, 5), encoding)
   end
 
   @spec encode(String.t, String.t) :: String.t
@@ -76,11 +77,13 @@ defmodule SegwitAddr do
   :: {:ok, {String.t, segwit_version_t, list(byte())}} | {:error,  String.t}
   def decode(addr) do
     case Bech32.decode(addr) do
-      {:ok, {hrp, data}} ->
+      {:ok, {hrp, data, encoding}} ->
         case data do
           [version | encoded] when version in 0..16 ->
             program = convert_bits(encoded, 5, 8, false)
             cond do
+              get_encoding(version) != encoding ->
+                {:error, "Invalid encoding for witness version"}
               is_nil(program) or !program_length_valid?(version, length(program)) ->
                 {:error, "Invalid program length for witness version"}
               true ->
@@ -113,6 +116,9 @@ defmodule SegwitAddr do
       |> :binary.list_to_bin()
       |> Base.encode16(case: :lower)
   end
+
+  defp get_encoding(0), do: :bech32
+  defp get_encoding(v) when v in 1..16, do: :bech32m
 
   # General power-of-2 base conversion.
   defp convert_bits(data, from, to, pad \\ true) do

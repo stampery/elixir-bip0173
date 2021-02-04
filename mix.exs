@@ -26,6 +26,7 @@ defmodule BIP0173.Mixfile do
       licenses: ["MIT"],
       links: %{
         "GitHub" => "https://github.com/stampery/elixir-bip0173",
+        "BIP-0141" => "https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki",
         "BIP-0173" => "https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki",
         "Other reference implementations" => "https://github.com/sipa/bech32/tree/master/ref"
       }

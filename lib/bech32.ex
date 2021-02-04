@@ -53,6 +53,14 @@ defmodule Bech32 do
   """
   @spec encode(String.t, list(code_point_t)) :: String.t
   def encode(hrp, data) when is_list(data) do
+    unless byte_size(hrp) in 1..83 do
+      raise ArgumentError, message: "invalid hrp length"
+    end
+
+    if hrp |> :binary.bin_to_list |> Enum.any?(& &1 not in 33..126) do
+      raise ArgumentError, message: "illegal character in hrp"
+    end
+
     checksummed = data ++ create_checksum(hrp, data)
     dp = for (i <- checksummed), into: "", do: <<Enum.at(@charset, i)>>
     <<hrp::binary, @separator, dp::binary>>

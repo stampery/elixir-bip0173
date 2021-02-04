@@ -44,6 +44,14 @@ defmodule SegwitAddr do
   """
   @spec encode(String.t, segwit_version_t, list(byte())) :: String.t
   def encode(hrp, version, program) when is_list(program) do
+    unless version in 0..16 do
+      raise ArgumentError, "invalid witness version"
+    end
+
+    unless program_length_valid?(version, length(program)) do
+      raise ArgumentError, "invalid witness program length"
+    end
+
     Bech32.encode(hrp, [version] ++ convert_bits(program, 8, 5))
   end
 

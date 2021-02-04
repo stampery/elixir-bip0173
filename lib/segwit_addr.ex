@@ -163,7 +163,8 @@ defmodule SegwitAddr do
   # Validates witness program length
   # BIP-0141 defines witness program length must be between 2 and 40 inclusive
   # for witness version 0 only 20 and 32 are allowed
-  # future versions may introduce other requirements
+  # BIP-0341 specifies version 1 and length 32 but does not introduce any limits
+  # future BIPs may introduce other requirements
   defp program_length_valid?(0, length) when length in [20, 32], do: true
   defp program_length_valid?(version, length) when version != 0 and length in 2..40, do: true
   defp program_length_valid?(_, _), do: false

@@ -34,6 +34,11 @@ defmodule Bech32 do
   # Generator coefficients
   @generator [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
 
+  @typedoc """
+  Base32 code point
+  """
+  @type code_point_t :: 0..31
+
   @doc ~S"""
   Encode a Bech32 string.
 
@@ -46,7 +51,7 @@ defmodule Bech32 do
       ...> 8, 21, 4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24,20, 6, 14, 30, 22])
       "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
   """
-  @spec encode(String.t, list(integer)) :: String.t
+  @spec encode(String.t, list(code_point_t)) :: String.t
   def encode(hrp, data) when is_list(data) do
     checksummed = data ++ create_checksum(hrp, data)
     dp = for (i <- checksummed), into: "", do: <<Enum.at(@charset, i)>>
@@ -70,7 +75,7 @@ defmodule Bech32 do
       {:ok, {"bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13, 8, 21,
         4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22]}}
   """
-  @spec decode(String.t) :: {:ok, {String.t, list(integer)}} | {:error, String.t}
+  @spec decode(String.t) :: {:ok, {String.t, list(code_point_t)}} | {:error, String.t}
   def decode(bech) do
     with  {_, false}  <- {:mixed,  String.downcase(bech) != bech &&
             String.upcase(bech) != bech},

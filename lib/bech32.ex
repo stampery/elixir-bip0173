@@ -57,7 +57,7 @@ defmodule Bech32 do
       raise ArgumentError, message: "invalid hrp length"
     end
 
-    if hrp |> :binary.bin_to_list |> Enum.any?(& &1 not in 33..126) do
+    if hrp |> :binary.bin_to_list |> Enum.any?(& &1 < 33 || &1 > 126) do
       raise ArgumentError, message: "illegal character in hrp"
     end
 

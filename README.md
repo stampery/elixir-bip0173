@@ -8,6 +8,8 @@ Upstream GitHub repository: [stampery/elixir-bip0173](https://github.com/stamper
 
 [BIP-0173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki) proposes a checksummed base32 format, "Bech32", and a standard for native segregated witness output addresses using it.
 
+[BIP-0141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki) defines Segregated Witness v0 and witness programs.
+
 You can find more information in [the original proposal](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki) by [@sipa](https://github.com/sipa) and [@gmaxwell](https://github.com/gmaxwell).
 
 ## Installation

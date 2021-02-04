@@ -34,6 +34,7 @@ defmodule Bech32 do
   # Generator coefficients
   @generator [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
 
+  # Bech32m checksum constant
   @bech32m_const 0x2bc830a3
 
   @typedoc """
@@ -160,6 +161,7 @@ defmodule Bech32 do
     end
   end
 
+  # Gets checksum constant
   defp get_encoding_const(:bech32), do: 1
   defp get_encoding_const(:bech32m), do: @bech32m_const
 

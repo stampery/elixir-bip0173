@@ -117,6 +117,7 @@ defmodule SegwitAddr do
       |> Base.encode16(case: :lower)
   end
 
+  # Gets encoding for witness version
   defp get_encoding(0), do: :bech32
   defp get_encoding(v) when v in 1..16, do: :bech32m
 

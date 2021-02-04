@@ -30,10 +30,14 @@ You can find the full API reference and examples in the [online documentation at
 
 ### Bech32
 
-#### Encoding data to Bech32 string
+#### Encoding data to Bech32 and Bech32m string
 ```elixir
 iex> Bech32.encode("bech32", [0, 1, 2], :bech32)
 "bech321qpz4nc4pe"
+```
+```elixir
+iex> Bech32.encode("bech32", [0, 1, 2], :bech32m)
+"bech321qpzq0geym"
 ```
 ```elixir
 iex> Bech32.encode("bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13,
@@ -41,10 +45,14 @@ iex> Bech32.encode("bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13,
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
 ```
 
-#### Decoding data from Bech32 string
+#### Decoding data from Bech32 and Bech32m string
 ```elixir
 iex> Bech32.decode("bech321qpz4nc4pe")
 {:ok, {"bech32", [0, 1, 2], :bech32}}
+```
+```elixir
+iex> Bech32.decode("bech321qpzq0geym")
+{:ok, {"bech32", [0, 1, 2], :bech32m}}
 ```
 ``` elixir
 iex> Bech32.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
@@ -54,7 +62,7 @@ iex> Bech32.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
 
 ### SegwitAddr
 
-#### Encoding a SegWit program into BIP-0173 format
+#### Encoding a SegWit program into BIP-0350 format
 ```elixir
 iex> SegwitAddr.encode("bc", "0014751e76e8199196d454941c45d1b3a323f1433bd6")
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
@@ -65,7 +73,7 @@ iex> SegwitAddr.encode("bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
 ```
 
-#### Decoding a BIP-0173 address into a SegWit program and formatting it as an hexadecimal ScriptPubKey
+#### Decoding a BIP-0350 address into a SegWit program and formatting it as an hexadecimal ScriptPubKey
 ```elixir
 iex> SegwitAddr.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
 {:ok, {"bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,

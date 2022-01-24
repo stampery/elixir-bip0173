@@ -148,7 +148,7 @@ defmodule Bech32 do
   # Create a checksum.
   defp create_checksum(hrp, data, encoding) do
     values = expand_hrp(hrp) ++ data ++ [0, 0, 0, 0, 0, 0]
-    mod = polymod(values) ^^^ get_encoding_const(encoding)
+    mod = bxor(polymod(values), get_encoding_const(encoding))
     for p <- 0..5, do: (mod >>> 5 * (5 - p)) &&& 31
   end
 
@@ -177,13 +177,13 @@ defmodule Bech32 do
   defp polymod(values) do
     Enum.reduce(values, 1, fn (v, chk) ->
       top = chk >>> 25
-      chk = ((chk &&& 0x1ffffff) <<< 5) ^^^ v
+      chk = bxor(((chk &&& 0x1ffffff) <<< 5), v)
       Enum.reduce((for i <- 0..4, do: i), chk, fn(i, chk) ->
-        chk ^^^ if ((top >>> i) &&& 1) != 0 do
+        bxor(chk, if ((top >>> i) &&& 1) != 0 do
           Enum.at(@generator, i)
         else
           0
-        end
+        end)
       end)
     end)
   end

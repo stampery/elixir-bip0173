@@ -4,9 +4,13 @@
 
 Upstream GitHub repository: [stampery/elixir-bip0173](https://github.com/stampery/elixir-bip0173)
 
-## About BIP-0173 and Bech32
+## About BIP-0173, BIP-0350 and Bech32 and Bech32m
 
 [BIP-0173](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki) proposes a checksummed base32 format, "Bech32", and a standard for native segregated witness output addresses using it.
+
+[BIP-0141](https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki) defines Segregated Witness v0 and witness programs.
+
+[BIP-0350](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki) Bech32m format for v1+ witness addresses.
 
 You can find more information in [the original proposal](https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki) by [@sipa](https://github.com/sipa) and [@gmaxwell](https://github.com/gmaxwell).
 
@@ -26,31 +30,39 @@ You can find the full API reference and examples in the [online documentation at
 
 ### Bech32
 
-#### Encoding data to Bech32 string
+#### Encoding data to Bech32 and Bech32m string
 ```elixir
-iex> Bech32.encode("bech32", [0, 1, 2])
+iex> Bech32.encode("bech32", [0, 1, 2], :bech32)
 "bech321qpz4nc4pe"
 ```
 ```elixir
+iex> Bech32.encode("bech32", [0, 1, 2], :bech32m)
+"bech321qpzq0geym"
+```
+```elixir
 iex> Bech32.encode("bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13,
-...> 8, 21, 4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24,20, 6, 14, 30, 22])
+...> 8, 21, 4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24,20, 6, 14, 30, 22], :bech32)
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
 ```
 
-#### Decoding data from Bech32 string
+#### Decoding data from Bech32 and Bech32m string
 ```elixir
 iex> Bech32.decode("bech321qpz4nc4pe")
-{:ok, {"bech32", [0, 1, 2]}}
+{:ok, {"bech32", [0, 1, 2], :bech32}}
+```
+```elixir
+iex> Bech32.decode("bech321qpzq0geym")
+{:ok, {"bech32", [0, 1, 2], :bech32m}}
 ```
 ``` elixir
 iex> Bech32.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
 {:ok, {"bc", [0, 14, 20, 15, 7, 13, 26, 0, 25, 18, 6, 11, 13, 8, 21,
-  4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22]}}
+  4, 20, 3, 17, 2, 29, 3, 12, 29, 3, 4, 15, 24, 20, 6, 14, 30, 22], :bech32}}
 ```
 
 ### SegwitAddr
 
-#### Encoding a SegWit program into BIP-0173 format
+#### Encoding a SegWit program into BIP-0350 format
 ```elixir
 iex> SegwitAddr.encode("bc", "0014751e76e8199196d454941c45d1b3a323f1433bd6")
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
@@ -61,7 +73,7 @@ iex> SegwitAddr.encode("bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,
 "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
 ```
 
-#### Decoding a BIP-0173 address into a SegWit program and formatting it as an hexadecimal ScriptPubKey
+#### Decoding a BIP-0350 address into a SegWit program and formatting it as an hexadecimal ScriptPubKey
 ```elixir
 iex> SegwitAddr.decode("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
 {:ok, {"bc", 0, [117, 30, 118, 232, 25, 145, 150, 212,
